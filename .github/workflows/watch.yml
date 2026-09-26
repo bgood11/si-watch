@@ -1,8 +1,10 @@
 name: si-watch
 
+# GitHub starts scheduled runs late or skips them, so each run checks every
+# 3 minutes for 50 minutes and a new start is attempted every 15 minutes.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "4,19,34,49 * * * *"
   workflow_dispatch:
 
 concurrency:
@@ -12,10 +14,15 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
-      - name: Check watched .si domains
+      - name: Check watched .si domains every 3 minutes
         env:
           SI_DOMAINS: ${{ vars.SI_DOMAINS }}
-        run: python3 check.py
+        run: |
+          end=$((SECONDS + 50 * 60))
+          while [ $SECONDS -lt $end ]; do
+            python3 check.py || exit $?
+            sleep 180
+          done
